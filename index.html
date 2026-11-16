@@ -14,7 +14,7 @@
   <meta property="og:image" content="images/og.jpg">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d0d0d'/%3E%3Ccircle cx='17' cy='42' r='5' fill='%23e3262f'/%3E%3Ctext x='38' y='44' font-family='Arial' font-weight='700' font-size='30' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/fonts.css?v=1">
-  <link rel="stylesheet" href="css/style.css?v=1">
+  <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
   <header class="top">
@@ -30,15 +30,15 @@
       <img class="hero-img" src="images/hero-1100.webp" alt="Intérieur du salon .CUT : fauteuils de barbier, capes rouges et sol en damier noir et blanc" width="1100" height="1375" fetchpriority="high">
       <div class="hero-shade"></div>
       <div class="hero-txt">
-        <p class="kicker">Barbier · Tlemcen</p>
+        <p class="kicker">Barbershop · Tlemcen</p>
         <h1><span class="dot"></span>CUT barbershop</h1>
         <p class="rating-line"><span class="stars" aria-hidden="true">★★★★★</span> <b>5,0</b> · 18 avis Google</p>
-        <p class="hero-sub">Coupes, dégradés et barbe dans un salon moderne. Choisissez votre barbier et votre créneau en quelques secondes.</p>
+        <p class="hero-sub">Bienvenue chez .CUT. Coupes, dégradés et barbe dans un salon moderne. Choisissez votre barbier et votre créneau en quelques secondes.</p>
         <div class="hero-cta">
           <a class="btn btn-red" href="#reserver">Prendre rendez-vous</a>
           <a class="btn btn-ghost" href="tel:0672015799">Appeler</a>
         </div>
-        <p class="open-now" id="openNow"></p>
+        <div class="hero-chips"><span class="chip" id="openNow"></span><span class="chip chip-next" id="nextSlot" hidden></span></div>
       </div>
     </section>
 
@@ -48,15 +48,19 @@
       <div><b>24h/24</b><span>réservation en ligne</span></div>
     </section>
 
-    <section class="sec" id="prestations">
+    <div class="layout">
+    <section class="sec rv" id="prestations">
       <h2>Prestations</h2>
+      <p class="sec-sub">Choisissez une prestation, puis votre barbier et votre heure.</p>
       <p class="note" id="priceNote" hidden>Prix et durées indicatifs, à confirmer avec le salon.</p>
       <div class="svc-list" id="svcList"><p class="muted">Chargement…</p></div>
     </section>
 
-    <section class="sec" id="reserver">
+    <section class="sec side" id="reserver">
       <h2>Réserver</h2>
+      <p class="sec-sub">En ligne, 24h/24. Créneaux toutes les 30 min.</p>
       <div class="book" id="book">
+        <div class="progress" aria-hidden="true"><i id="prog"></i></div>
         <ol class="steps" id="steps">
           <li data-s="1">Prestation</li><li data-s="2">Barbier</li><li data-s="3">Créneau</li><li data-s="4">Vos infos</li>
         </ol>
@@ -64,7 +68,7 @@
       </div>
     </section>
 
-    <section class="sec" id="galerie">
+    <section class="sec rv" id="galerie">
       <h2>Le salon en photos</h2>
       <div class="gal" id="gal">
         <button data-big="images/salon-fauteuils-1100.webp"><img loading="lazy" src="images/salon-fauteuils-600.webp" alt="Fauteuils et capes rouges, sol en damier"></button>
@@ -78,7 +82,7 @@
       <p class="credit">Photos : fiche Google Maps du salon.</p>
     </section>
 
-    <section class="sec" id="avis">
+    <section class="sec rv" id="avis">
       <h2>Avis clients</h2>
       <div class="score"><b>5,0</b><div><span class="stars">★★★★★</span><span class="muted">18 avis sur Google</span></div></div>
       <div class="reviews">
@@ -90,7 +94,7 @@
       <a class="link" href="https://www.google.com/maps?cid=5611599565779558280" target="_blank" rel="noopener" id="gLink">Voir tous les avis sur Google</a>
     </section>
 
-    <section class="sec" id="infos">
+    <section class="sec rv" id="infos">
       <h2>Infos pratiques</h2>
       <div class="info-grid">
         <div class="card">
@@ -107,10 +111,11 @@
       <iframe class="map" title="Carte : .CUT barbershop à Tlemcen" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=-1.3301%2C34.8843%2C-1.3221%2C34.8883&amp;layer=mapnik&amp;marker=34.8863207%2C-1.3261133"></iframe>
     </section>
 
-    <section class="sec about">
+    <section class="sec about rv">
       <h2>Le salon</h2>
       <p>.CUT est un barbershop moderne à Tlemcen : décor noir et blanc, sol en damier, capes rouges. Younes et Anis vous accueillent tous les jours pour une coupe, un dégradé net ou une barbe soignée. Réservez en ligne, ou passez directement.</p>
     </section>
+    </div>
   </main>
 
   <footer class="foot">
@@ -125,8 +130,8 @@
 
   <div class="lb" id="lb" hidden><button class="lb-x" aria-label="Fermer">×</button><img alt=""></div>
 
-  <script src="config.js?v=2"></script>
+  <script src="config.js?v=3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
-  <script src="js/app.js?v=1"></script>
+  <script src="js/app.js?v=3"></script>
 </body>
 </html>

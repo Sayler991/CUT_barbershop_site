@@ -39,3 +39,27 @@ input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-ra
 .toast{background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;margin-top:6px}.toast.e{background:#b81c24}
 
 @media(max-width:600px){#who span{display:none}}
+
+/* ===== Tableau de bord v3 ===== */
+#app{max-width:1240px;margin:0 auto}
+.dash{padding:18px 12px 4px;animation:fade .4s ease both}.dash h1{margin:0;font-size:24px}.dash>p{margin:2px 0 12px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 2px 10px rgba(0,0,0,.05);display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden}
+.kpi small{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.kpi b{font-size:28px;line-height:1.1}.kpi span{font-size:13px;color:var(--muted)}
+.kpi.dark{background:var(--ink);color:#fff}.kpi.dark small,.kpi.dark span{color:#bbb}
+.kpi.br{border-top:4px solid var(--red)}.kpi.bb{border-top:4px solid #2f6fe3}
+.kpi.next{grid-column:1/-1;background:linear-gradient(135deg,#e3262f,#b81c24);color:#fff}.kpi.next small,.kpi.next span{color:#ffe1e3}
+.kpi.next em{position:absolute;right:14px;top:12px;font-style:normal;font-size:13px;background:rgba(255,255,255,.2);padding:3px 9px;border-radius:999px}
+.appt{animation:fade .3s ease both;transition:box-shadow .2s}.appt:hover{box-shadow:0 6px 18px rgba(0,0,0,.08)}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(min-width:900px){
+  .kpis{grid-template-columns:repeat(6,1fr)}.kpi.next{grid-column:span 2}
+  .bar{padding:14px 12px}.cols{padding:0 12px 30px;gap:18px}
+  .cols.week{grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+  .cols.week .appt{padding:9px}.cols.week .appt .tm{font-size:14px}.cols.week .act .btn{padding:5px 8px;font-size:12px}
+  .cols.week .empty{padding:10px;font-size:13px}
+  .panel{max-width:900px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.logo small{margin-left:6px}
+@media(max-width:899px){.kpi.dark,.kpi.ca{grid-column:1/-1}}

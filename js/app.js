@@ -35,9 +35,10 @@
     var anyTc = false;
     INFO.services.forEach(function (s) {
       if (s.to_confirm) anyTc = true;
-      list.appendChild(h('div', { class: 'svc' },
+      var ic = h('span', { class: 'ico' }); ic.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M8.2 7.4 20 17M8.2 16.6 20 7"/></g></svg>';
+      list.appendChild(h('div', { class: 'svc', onclick: function (e) { if (e.target.closest('a')) return; pickService(s); $('#reserver').scrollIntoView({ behavior: 'smooth' }); } }, ic,
         h('div', { class: 't' }, h('h3', { text: s.name }), s.description ? h('p', { text: s.description }) : null),
-        h('div', { class: 'meta' }, h('b', { text: priceShort(s) }), dur(s.duration_min), s.to_confirm ? h('div', null, h('span', { class: 'tag', text: 'à confirmer' })) : null),
+        h('div', { class: 'meta' }, h('b', { text: priceShort(s) }), h('span', { class: 'dchip', text: '⏱ ' + dur(s.duration_min) }), s.to_confirm ? h('div', null, h('span', { class: 'tag', text: 'à confirmer' })) : null),
         h('a', { class: 'btn btn-line sm', href: '#reserver', onclick: function () { pickService(s); } }, 'Choisir')));
     });
     $('#priceNote').hidden = !anyTc;
@@ -60,12 +61,16 @@
   function setStep(n) {
     S.step = n;
     [].forEach.call(document.querySelectorAll('#steps li'), function (li) { var k = +li.dataset.s; li.className = k === n ? 'on' : k < n ? 'ok' : ''; });
+    $('#prog').style.width = Math.min(100, n * 25) + '%';
     render();
+    var bk = $('#book').getBoundingClientRect();
+    if (S.touched && (bk.top < 60 || bk.top > innerHeight * .6)) window.scrollTo({ top: scrollY + bk.top - 70, behavior: 'smooth' });
+    S.touched = true;
   }
   function pickService(s) { S.service = s; S.start = null; if (INFO.barbers.length <= 1) S.barber = INFO.barbers[0] ? INFO.barbers[0].id : null; setStep(INFO.barbers.length > 1 ? 2 : 3); }
   function barberName(id) { var b = INFO.barbers.filter(function (x) { return x.id === id; })[0]; return b ? b.name : 'Peu importe'; }
   function recap() {
-    return h('div', { class: 'recap' }, h('b', { text: S.service.name }), ' · ' + dur(S.service.duration_min) + ' · ' + price(S.service),
+    return h('div', { class: 'recap' }, h('div', null, h('b', { text: S.service.name }), ' · ' + dur(S.service.duration_min) + ' · ' + price(S.service)),
       S.step > 2 ? h('div', { text: 'Barbier : ' + (S.barber == null ? 'peu importe (premier disponible)' : barberName(S.barber)) }) : null,
       S.step > 3 && S.start ? h('div', { text: longDate(S.day) + ' à ' + hm(S.startMin) }) : null);
   }
@@ -81,6 +86,24 @@
     }
     return out;
   }
+  function nextFree(ids, d) {
+    var n = localNow(), now = Date.now();
+    for (var i = 0; i < C.DAYS_AHEAD; i++) {
+      var day = addDays(n, i), o = hoursOf(day.dow); if (!o || o.closed) continue;
+      for (var m = o.open_min; m + d <= o.close_min; m += STEP) {
+        var a = toUtc(day, m), b = a + d * 60000; if (a < now + 15 * 60000) continue;
+        if (ids.some(function (id) { return freeFor(id, a, b); })) return { i: i, day: day, m: m };
+      }
+    }
+    return null;
+  }
+  function nxLabel(x) { return !x ? 'Complet sur 14 jours' : 'Prochaine dispo : ' + (x.i === 0 ? 'aujourd’hui' : x.i === 1 ? 'demain' : DAYS[x.day.dow] + ' ' + x.day.d) + ' à ' + hm(x.m); }
+  function heroNext() {
+    var el = $('#nextSlot'); if (!INFO.services.length) return;
+    var d = Math.min.apply(null, INFO.services.map(function (s) { return s.duration_min; }));
+    var x = nextFree(INFO.barbers.map(function (b) { return b.id; }), d);
+    if (x) { el.textContent = '⚡ ' + nxLabel(x); el.hidden = false; }
+  }
   function loadBusy() {
     var n = localNow(), from = new Date(toUtc(n, 0)).toISOString(), to = new Date(toUtc(addDays(n, C.DAYS_AHEAD + 1), 0)).toISOString();
     return sb.rpc('cutbarber_busy', { p_from: from, p_to: to }).then(function (r) {
@@ -89,21 +112,21 @@
     });
   }
   function render() {
-    var p = $('#pane'); p.innerHTML = '';
+    var p = $('#pane'); p.innerHTML = ''; p.style.animation = 'none'; void p.offsetWidth; p.style.animation = '';
     if (S.step === 1) {
       p.appendChild(h('h3', { text: 'Choisissez une prestation' }));
       INFO.services.forEach(function (s) {
         p.appendChild(h('button', { class: 'choice', type: 'button', onclick: function () { pickService(s); } },
-          h('span', { class: 't' }, h('b', { text: s.name }), h('small', { text: dur(s.duration_min) + ' · ' + price(s) })), '›'));
+          h('span', { class: 't' }, h('b', { text: s.name }), h('small', { text: dur(s.duration_min) + ' · ' + price(s) })), h('span', { class: 'chev', text: '›' })));
       });
     } else if (S.step === 2) {
       p.appendChild(h('button', { class: 'back', type: 'button', onclick: function () { setStep(1); } }, '‹ Changer de prestation'));
       p.appendChild(recap()); p.appendChild(h('h3', { text: 'Avec qui ?' }));
       p.appendChild(h('button', { class: 'choice', type: 'button', onclick: function () { S.barber = null; setStep(3); } },
-        h('span', { class: 'av any', text: '★' }), h('span', { class: 't' }, h('b', { text: 'Peu importe' }), h('small', { text: 'Le premier barbier disponible' })), '›'));
+        h('span', { class: 'av any', text: '★' }), h('span', { class: 't' }, h('b', { text: 'Peu importe' }), h('small', { text: 'Le premier barbier disponible' }), h('span', { class: 'nx', text: nxLabel(nextFree(INFO.barbers.map(function (b) { return b.id; }), S.service.duration_min)) })), h('span', { class: 'chev', text: '›' })));
       INFO.barbers.forEach(function (b) {
         p.appendChild(h('button', { class: 'choice', type: 'button', onclick: function () { S.barber = b.id; setStep(3); } },
-          h('span', { class: 'av', text: b.name.charAt(0).toUpperCase() }), h('span', { class: 't' }, h('b', { text: b.name }), h('small', { text: b.bio || 'Barbier' })), '›'));
+          h('span', { class: 'av', text: b.name.charAt(0).toUpperCase() }), h('span', { class: 't' }, h('b', { text: b.name }), h('small', { text: b.bio || 'Barbier' }), h('span', { class: 'nx', text: nxLabel(nextFree([b.id], S.service.duration_min)) })), h('span', { class: 'chev', text: '›' })));
       });
     } else if (S.step === 3) {
       p.appendChild(h('button', { class: 'back', type: 'button', onclick: function () { setStep(INFO.barbers.length > 1 ? 2 : 1); } }, '‹ Retour'));
@@ -124,7 +147,7 @@
         var sl = slotsFor(S.day), groups = [['Matin', 0, 720], ['Après-midi', 720, 1080], ['Soir', 1080, 1441]];
         groups.forEach(function (g) {
           var xs = sl.filter(function (m) { return m >= g[1] && m < g[2]; }); if (!xs.length) return;
-          slotsBox.appendChild(h('p', { class: 'period', text: g[0] }));
+          slotsBox.appendChild(h('p', { class: 'period' }, g[0], h('span', { text: xs.length + ' créneau' + (xs.length > 1 ? 'x' : '') })));
           var grid = h('div', { class: 'slots' });
           xs.forEach(function (m) { grid.appendChild(h('button', { class: 'slot', type: 'button', onclick: function () { S.start = toUtc(S.day, m); S.startMin = m; setStep(4); } }, hm(m))); });
           slotsBox.appendChild(grid);
@@ -156,7 +179,7 @@
             return;
           }
           S.result = r.data; S.name = nm; setStep(5);
-          loadBusy();
+          loadBusy().then(heroNext);
         });
       };
       p.appendChild(f); setTimeout(function () { name.focus(); }, 50);
@@ -165,7 +188,7 @@
       p.appendChild(h('div', { class: 'done' }, h('div', { class: 'ic', text: '✓' }), h('h3', { text: 'Rendez-vous enregistré' }),
         h('div', { class: 'recap' }, h('b', { text: S.result.service }), h('div', { text: longDate(S.day) + ' à ' + hm(S.startMin) }), h('div', { text: 'Avec ' + S.result.barber_name }), h('div', { text: 'Au nom de ' + S.name })),
         h('p', { class: 'muted', text: 'Le salon peut vous appeler pour confirmer. Un empêchement ? Appelez le 0672 01 57 99.' }),
-        h('button', { class: 'btn btn-line', type: 'button', onclick: function () { S = { step: 1 }; setStep(1); } }, 'Nouveau rendez-vous')));
+        h('button', { class: 'btn btn-line', type: 'button', onclick: function () { S = { step: 1, touched: true }; setStep(1); } }, 'Nouveau rendez-vous')));
     }
   }
 
@@ -175,9 +198,14 @@
   lb.onclick = function (e) { if (e.target !== $('img', lb)) lb.hidden = true; };
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') lb.hidden = true; });
 
+  $('#book').appendChild(h('div', { class: 'trust' }, h('span', { text: '✓ Gratuit' }), h('span', { text: '✓ Sans compte' }), h('span', { text: '✓ Confirmation immédiate' })));
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px' });
+    [].forEach.call(document.querySelectorAll('.rv'), function (el) { io.observe(el); });
+  } else [].forEach.call(document.querySelectorAll('.rv'), function (el) { el.classList.add('in'); });
   sb.rpc('cutbarber_public_info').then(function (r) {
     if (r.error || !r.data) { $('#pane').innerHTML = '<p class="err">Réservation indisponible pour le moment. Appelez le 0672 01 57 99.</p>'; return; }
     INFO = r.data; renderStatic();
-    return loadBusy().then(function () { setStep(1); });
+    return loadBusy().then(function () { setStep(1); heroNext(); });
   }).catch(function () { $('#pane').innerHTML = '<p class="err">Réservation indisponible pour le moment. Appelez le 0672 01 57 99.</p>'; });
 })();

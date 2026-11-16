@@ -80,10 +80,15 @@
   function agenda(body, quiet) {
     var activeB = CFG.barbers.filter(function (b) { return b.active; });
     var from = VIEW === 'jour' ? CUR : weekStart(CUR), to = addDays(from, VIEW === 'jour' ? 1 : 7);
-    return sb.rpc('cutbarber_admin_appointments', { p_from: new Date(toUtc(from)).toISOString(), p_to: new Date(toUtc(to)).toISOString() }).then(function (r) {
-      if (r.error) { if (!quiet) toast('Erreur de chargement', true); return; }
-      var list = (r.data || []).map(function (a) { a.s = Date.parse(a.starts_at); a.e = Date.parse(a.ends_at); a.L = localOf(a.s); return a; });
+    var today = localOf(Date.now());
+    function fetch(f, t) { return sb.rpc('cutbarber_admin_appointments', { p_from: new Date(toUtc(f)).toISOString(), p_to: new Date(toUtc(t)).toISOString() }); }
+    function prep(d) { return (d || []).map(function (a) { a.s = Date.parse(a.starts_at); a.e = Date.parse(a.ends_at); a.L = localOf(a.s); return a; }); }
+    return Promise.all([fetch(from, to), fetch(today, addDays(today, 1))]).then(function (rs) {
+      var r = rs[0];
+      if (r.error || rs[1].error) { if (!quiet) toast('Erreur de chargement', true); return; }
+      var list = prep(r.data), tlist = prep(rs[1].data).filter(function (a) { return a.status !== 'cancelled'; });
       body.innerHTML = '';
+      body.appendChild(summary(today, tlist, activeB));
       var seg = h('div', { class: 'seg' }, ['jour', 'semaine'].map(function (v) { return h('button', { class: VIEW === v ? 'on' : null, onclick: function () { VIEW = v; agenda(body); } }, v === 'jour' ? 'Jour' : 'Semaine'); }));
       var fsel = h('div', { class: 'seg' }, [['all', 'Tous']].concat(activeB.map(function (b) { return [String(b.id), b.name]; })).map(function (f) {
         return h('button', { class: FILTER === f[0] ? 'on' : null, onclick: function () { FILTER = f[0]; agenda(body); } }, f[1]);
@@ -108,7 +113,7 @@
         });
         body.appendChild(cols);
       } else {
-        var wrap = h('div', { class: 'cols' });
+        var wrap = h('div', { class: 'cols week' });
         for (var k = 0; k < 7; k++) {
           var day = addDays(from, k);
           var xs = list.filter(function (a) { return same(a.L, day) && shown.some(function (b) { return b.id === a.barber_id; }); });
@@ -120,6 +125,26 @@
         body.appendChild(wrap);
       }
     });
+  }
+  function summary(today, tl, activeB) {
+    var now = Date.now(), next = tl.filter(function (a) { return a.status === 'booked' && a.e > now; })[0];
+    var ca = tl.reduce(function (t, a) { return t + (a.price_da || 0); }, 0);
+    var g = h('div', { class: 'kpis' },
+      h('div', { class: 'kpi dark' }, h('small', { text: 'Rendez-vous aujourd’hui' }), h('b', { text: String(tl.length) }), h('span', { text: tl.filter(function (a) { return a.status === 'done'; }).length + ' terminé(s)' })));
+    activeB.forEach(function (b, i) {
+      var n = tl.filter(function (a) { return a.barber_id === b.id; }).length;
+      g.appendChild(h('div', { class: 'kpi ' + (i % 2 ? 'bb' : 'br') }, h('small', { text: b.name }), h('b', { text: String(n) }), h('span', { text: 'rendez-vous' })));
+    });
+    var nx = h('div', { class: 'kpi next' }, h('small', { text: 'Prochain rendez-vous' }));
+    if (next) {
+      var mins = Math.round((next.s - now) / 60000);
+      nx.appendChild(h('b', { text: hm(next.L.min) }));
+      nx.appendChild(h('span', { text: next.client_name + ' · ' + next.service_name + ' · ' + bName(next.barber_id) }));
+      nx.appendChild(h('em', { text: mins > 0 ? 'dans ' + (mins >= 60 ? Math.floor(mins / 60) + ' h ' + String(mins % 60).padStart(2, '0') : mins + ' min') : 'en cours' }));
+    } else { nx.appendChild(h('b', { text: '—' })); nx.appendChild(h('span', { text: 'Plus de rendez-vous aujourd’hui' })); }
+    g.appendChild(nx);
+    g.appendChild(h('div', { class: 'kpi ca' }, h('small', { text: 'Chiffre prévu (indicatif)' }), h('b', { text: ca.toLocaleString('fr-FR') + ' DA' }), h('span', { text: 'selon les prix du site' })));
+    return h('section', { class: 'dash' }, h('h1', { text: 'Bonjour 👋' }), h('p', { class: 'muted', text: 'Aujourd’hui, ' + longDate(today) }), g);
   }
   function card(a, idx, showBarber, body) {
     var st = a.status, end = localOf(a.e);
