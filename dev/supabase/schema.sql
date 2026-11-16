@@ -110,9 +110,11 @@ begin
   if p_starts_at < now() + interval '15 minutes' or p_starts_at > now() + interval '60 days' then raise exception 'bad_time'; end if;
   loc := p_starts_at at time zone 'Africa/Algiers';
   m := extract(hour from loc)::int * 60 + extract(minute from loc)::int;
-  if m % 15 <> 0 or extract(second from loc) <> 0 then raise exception 'bad_time'; end if;
+  if extract(second from loc) <> 0 then raise exception 'bad_time'; end if;
   select * into h from cutbarber.hours where dow = extract(dow from loc)::int;
   if not found or h.closed or m < h.open_min or m + s.duration_min > h.close_min then raise exception 'closed'; end if;
+  -- créneaux toutes les 45 min à partir de l'ouverture (10:00, 10:45, 11:30…)
+  if (m - h.open_min) % 45 <> 0 then raise exception 'bad_time'; end if;
   e := p_starts_at + make_interval(mins => s.duration_min);
   if (select count(*) from cutbarber.appointments a where a.client_phone = p_phone and a.status = 'booked' and a.starts_at > now()) >= 3 then
     raise exception 'too_many';

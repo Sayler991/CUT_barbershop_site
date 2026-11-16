@@ -6,6 +6,6 @@ window.CUT_CONFIG = {
   PHONE: '0672015799',
   PHONE_DISPLAY: '0672 01 57 99',
   TZ_OFFSET_MIN: 60, /* Algérie : UTC+1 toute l'année */
-  STEP_MIN: 15,
+  STEP_MIN: 45, /* pas entre deux créneaux (aligné sur l'heure d'ouverture) */
   DAYS_AHEAD: 14
 };
