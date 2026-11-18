@@ -239,5 +239,24 @@
     body.appendChild(p);
   }
 
-  sb.auth.getSession().then(function (s) { s.data.session ? start() : showLogin(); });
+  function consumeLoginLink() {
+    var m = /^#connexion=([A-Za-z0-9_-]{20,200})$/.exec(location.hash);
+    if (!m) return Promise.resolve(false);
+    history.replaceState(null, '', location.pathname + location.search);
+    var app = $('#app');
+    app.innerHTML = '';
+    app.appendChild(h('p', { class: 'muted pad', text: 'Connexion par lien sécurisé…' }));
+    return sb.auth.verifyOtp({ type: 'magiclink', token_hash: m[1] }).then(function (r) {
+      if (r.error) {
+        showLogin('Ce lien de connexion a expiré ou a déjà été utilisé. Demandez un nouveau lien ou connectez-vous avec votre mot de passe.');
+        return true;
+      }
+      start();
+      return true;
+    });
+  }
+
+  consumeLoginLink().then(function (used) {
+    if (!used) sb.auth.getSession().then(function (s) { s.data.session ? start() : showLogin(); });
+  });
 })();
